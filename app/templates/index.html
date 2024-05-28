@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <title>Chat Bot</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="loader" id="loader"></div>
+
+      <form id="upload-form" enctype="multipart/form-data">
+        <label for="course-select">Select Course:</label>
+        <select id="course-select" name="course" required>
+          <option value="" disabled selected>Select a course</option>
+          <option value="sia">System integraion</option>
+          <option value="add_new">Add New Course</option>
+        </select>
+        <input type="file" name="file" id="file" required />
+        <button type="submit">Upload</button>
+      </form>
+      <textarea id="output" readonly></textarea>
+
+      <form id="add-course-form" style="display: none">
+        <label for="new-course-name">New Course Name:</label>
+        <input type="text" id="new-course-name" name="newCourseName" required />
+        <button type="submit">Add Course</button>
+      </form>
+
+      <form id="chat-form">
+        <input
+          type="text"
+          id="user-input"
+          placeholder="Ask a question..."
+          required
+        />
+        <button type="submit">Ask</button>
+      </form>
+      <textarea id="chat-response" readonly></textarea>
+    </div>
+
+    <script>
+      let lectData = "";
+      const loader = document.getElementById("loader");
+
+      const showLoader = () => {
+        loader.style.display = "block";
+      };
+
+      const hideLoader = () => {
+        loader.style.display = "none";
+      };
+
+      document
+        .getElementById("course-select")
+        .addEventListener("change", (event) => {
+          const selectedCourse = event.target.value;
+          if (selectedCourse === "add_new") {
+            document.getElementById("add-course-form").style.display = "block";
+          } else {
+            document.getElementById("add-course-form").style.display = "none";
+          }
+        });
+
+      document.getElementById("add-course-form").onsubmit = (e) => {
+        e.preventDefault();
+        const new_name = document.getElementById("new-course-name").value;
+        document.getElementById(
+          "course-select"
+        ).innerHTML += `<option value=${new_name.toLowerCase()}>${new_name}</option>`;
+        document.getElementById("new-course-name").value = "";
+        document.getElementById("add-course-form").style.display = "none";
+      };
+
+      document.getElementById("upload-form").onsubmit = async (e) => {
+        e.preventDefault();
+        showLoader();
+        const formData = new FormData();
+        const course = document.getElementById("course-select").value;
+        formData.append("course", course);
+        formData.append("file", document.getElementById("file").files[0]);
+
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        data = await response.json();
+        lectData = data.text;
+        document.getElementById("output").value = lectData;
+        hideLoader();
+      };
+
+      document.getElementById("chat-form").onsubmit = async (e) => {
+        e.preventDefault();
+        showLoader();
+        const userInput = document.getElementById("user-input").value;
+
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: userInput, data: lectData }),
+        });
+
+        const data = await response.json();
+        document.getElementById("chat-response").value =
+          data.response || data.error;
+        hideLoader();
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+# Ignore sensitive files
+key.json
+
+# Ignore virtual environment directories
+pyvenv.cfg
+bin/
+include/
+lib/
+lib64/
